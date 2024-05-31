@@ -24,6 +24,14 @@ void SetColor(int _textColor, int _backgroundColor) {
 	SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), (_backgroundColor << 4) | _textColor);
 }
 
+void SetCursorVis(bool _visible, DWORD _size)
+{
+	CONSOLE_CURSOR_INFO curinfo;
+	curinfo.dwSize = _size;  // Ä¿¼­ ±½±â(1~100)
+	curinfo.bVisible = _visible; // True: On, False: Off
+	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &curinfo);
+}
+
 COORD CursorPos() {
 	CONSOLE_SCREEN_BUFFER_INFO buffer;
 	GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &buffer);

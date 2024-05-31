@@ -17,11 +17,12 @@ typedef struct _player
 
 enum class OBJ_TYPE
 {
-	WALL = '0', ROAD, DOOR, END
+	WALL = '0', ROAD, DOOR, START, END
 };
 
 #include <vector>
 using std::vector;
 void FrameSync(unsigned int _framerate);
 void Init(char _arrMap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer, PPOS _pStartPos, PPOS _pDoorPos);
+void Update(char _arrMap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer);
 void MoveUpdate(char _arrMap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer);

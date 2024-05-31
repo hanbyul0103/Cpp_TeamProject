@@ -11,6 +11,7 @@ void FullScreen();
 void LockResize();
 void GotoXY(int _x, int _y);
 void SetColor(int _textColor = 15, int _backgroundColor = 0);
+void SetCursorVis(bool _visible, DWORD _size);
 COORD CursorPos();
 COORD GetConsoleResolution();
 
