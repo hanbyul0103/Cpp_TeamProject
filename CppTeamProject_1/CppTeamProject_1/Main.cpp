@@ -114,8 +114,8 @@ int main() {
 
 	obj_map[OBJ_TYPE::ROAD] = "  ";
 	obj_map[OBJ_TYPE::WALL] = "¡á";
-	obj_map[OBJ_TYPE::SIT] = "¡×";
-	obj_map[OBJ_TYPE::SPEED] = "¡â";
+	obj_map[OBJ_TYPE::SIT] = "¤±";
+	obj_map[OBJ_TYPE::SPEED] = "¢Í";
 
 	ifstream fin;
 	fin.open("GPMap.txt");
