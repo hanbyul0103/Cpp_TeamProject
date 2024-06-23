@@ -28,6 +28,8 @@ enum class Key {
 	ANNOUNCE_DANGER = 56, // 8
 	ANNOUNCE_WARNING = 57, // 9
 	TAKE_OFF = 58, // :
+	
+
 };
 
 int main() {
@@ -41,6 +43,7 @@ int main() {
 	std::string line;
 
 	if (story.is_open()) {
+		static time_t clock;
 		int sleepTime = 0;
 		while (getline(story, line))
 		{
