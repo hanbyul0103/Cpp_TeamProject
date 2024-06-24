@@ -43,7 +43,6 @@ int main() {
 	std::string line;
 
 	if (story.is_open()) {
-		static time_t clock;
 		int sleepTime = 0;
 		while (getline(story, line))
 		{
