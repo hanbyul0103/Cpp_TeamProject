@@ -10,7 +10,7 @@
 using std::cin;
 using std::cout;
 
-void MoveWindow(int x, int y);
+void MyMoveWindow(int x, int y);
 void ShakeWindow(int count);
 
 const int WIDTH = 1920;
@@ -35,7 +35,7 @@ enum class Key {
 int main() {
 	SetConsoleOutputCP(65001);
 
-	MoveWindow(WIDTH / 7, HEIGHT / 7);
+	MyMoveWindow(WIDTH / 7, HEIGHT / 7);
 
 	std::ifstream story;
 	story.open("GPStory.txt");
@@ -92,7 +92,7 @@ int main() {
 	}
 }
 
-void MoveWindow(int x, int y) {
+void MyMoveWindow(int x, int y) {
 	HWND hwnd = GetConsoleWindow();
 	MoveWindow(hwnd, x, y, WIDTH / 2, HEIGHT / 2, TRUE);
 }
@@ -102,13 +102,13 @@ void ShakeWindow(int count) {
 
 	for (int i = 0; i < shakeCount; i++)
 	{
-		MoveWindow(WIDTH / 7 + pow(-1, i) * 2, HEIGHT / 7 + pow(-1, i) * 2);
+		MyMoveWindow(WIDTH / 7 + pow(-1, i) * 2, HEIGHT / 7 + pow(-1, i) * 2);
 		Sleep(50);
 	}
 
 	for (int i = 0; i < shakeCount; i++)
 	{
-		MoveWindow(WIDTH / 7 + pow(-1, i), HEIGHT / 7 + pow(-1, i));
+		MyMoveWindow(WIDTH / 7 + pow(-1, i), HEIGHT / 7 + pow(-1, i));
 		Sleep(50);
 	}
 }
