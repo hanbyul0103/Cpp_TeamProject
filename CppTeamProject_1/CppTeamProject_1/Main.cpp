@@ -96,7 +96,7 @@ struct SYNERGY {
 	}
 };
 
-const int GAME_PLAYTIME = 10;
+const int GAME_PLAYTIME = 45;
 const int MAP_WIDTH = 76;
 const int MAP_HEIGHT = 13;
 const int MAG_RANGE = 3;
@@ -193,6 +193,8 @@ vector<SYNERGY> synergy_vec;
 bool collected[ITEM_SPECIES];
 int start_time, left_time;
 
+int best_score;
+
 BOOL Gotoxy(int _x, int _y)
 {
 	COORD Cur = { _x, _y };
@@ -259,7 +261,7 @@ void Render(vector<char> _map[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 3);		//Item Value Render
 	cout << "아이템 가치: " << _pPlayer->value;
 
-	Gotoxy(SYNERGY_POS.x, SYNERGY_POS.y-2);
+	Gotoxy(SYNERGY_POS.x, SYNERGY_POS.y - 2);
 	cout << obj_icon[OBJ_TYPE::SPEED] << ':' << _pPlayer->speedcnt << ' ';
 	cout << obj_icon[OBJ_TYPE::MAGNET] << ':' << _pPlayer->magnetcnt << ' ';
 
@@ -472,7 +474,7 @@ bool MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
 	if (!pressed)
 		used = 0;
 
-	if ((_pPlayer->tNewPos.x == -1|| Moveable((OBJ_TYPE)_arrmap[_pPlayer->tNewPos.y][_pPlayer->tNewPos.x][0])) 
+	if ((_pPlayer->tNewPos.x == -1 || Moveable((OBJ_TYPE)_arrmap[_pPlayer->tNewPos.y][_pPlayer->tNewPos.x][0]))
 		&& (!used || _pPlayer->speedUp))
 	{
 		if (_pPlayer->tPos.x != _pPlayer->tNewPos.x || _pPlayer->tPos.y != _pPlayer->tNewPos.y) {
@@ -744,8 +746,75 @@ void FireEnding() {
 
 }
 
-void Survive() {
+void Survive(int value) {
+	system("cls");
+	SetCursorVis(false, 1);
 
+	UINT originalCP = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_UTF8);
+
+	SetColor((int)COLOR::LIGHT_GREEN, (int)COLOR::BLACK);
+	std::cout << u8"                                     .~.                    \n";
+	std::cout << u8"                                     :::-.                  \n";
+	std::cout << u8"                                    ,:.-~:~,                \n";
+	std::cout << u8"                                   ,~-,~~-;:~.              \n";
+	std::cout << u8"                                   -~,,,.-;;;;-.            \n";
+	std::cout << u8"                                  -;;;~~-~:-~:;;-,          \n";
+	std::cout << u8"                                 -;,~;::-,.  .:;;::,        \n";
+	std::cout << u8"                               .~:.  .        :;:..;~.      \n";
+	std::cout << u8"                             .-;~,   -   ,. . :~~::::;.     \n";
+	std::cout << u8"                           -::~,   -., ...,-. : --~-:-      \n";
+	std::cout << u8"                       .,;;;:    , , -~-,~,   -;;;;-:.      \n";
+	std::cout << u8"                     --;;;;:;-, .-. .~~~:~-.   ~::;:,       \n";
+	std::cout << u8"                   .~:;;-;~:;;:.~. --~~-~,-..  .~;;:.       \n";
+	std::cout << u8"                 .:;;;;~::  ..~;;-:.-.-   ,~    .~:         \n";
+	std::cout << u8"                -~:~~::-; ---~:;;;;:--  ,.,    ,~:          \n";
+	std::cout << u8"               ~:~,. ,:-;,.-- ,----:::~ ,     ~::.          \n";
+	std::cout << u8"              ~;. .   ,;;;;:;;;-.~,.:;:- :-~.~;:            \n";
+	std::cout << u8"            .~:...    .~~;;;;;:~-  .~;:~:~~:;~,             \n";
+	std::cout << u8"           .~:. -.     ,~::;;;:,,~~~:~::;:--,               \n";
+	std::cout << u8"          .~:  :  ..     .~,:;;;;;;::;;;.                   \n";
+	std::cout << u8"          ~:..-.,:--;-   ..-~-~;;;:;:~,                     \n";
+	std::cout << u8"         ~;:... ~-.,-:  ..,  .~-;;;:,                       \n";
+	std::cout << u8"        ~.,~;   -;,,:~ .,   ::;~;;..                        \n";
+	std::cout << u8"       -~ ~~:~   -::- .,. -.~;~;:,                          \n";
+	std::cout << u8"      .~: --:-       -.  .,  :;-.                           \n";
+	std::cout << u8"      :;;;~,;~      ..  ~   ;;-                              \n";
+	std::cout << u8"      .:~:::;~     .- .-. .:;-                               \n";
+	std::cout << u8"       .-:~;;~        ., .:;-                                \n";
+	std::cout << u8"       . .:;;;-   ~:;::~.;;-.                                \n";
+	std::cout << u8"           ~:;;--;:;~:~:;;-                                 \n";
+	std::cout << u8"            .~;;;;-~~-;:;-                                  \n";
+	std::cout << u8"             ..:;;~:::.~-                                    \n";
+	std::cout << u8"                ::-:;-~-,                                    \n";
+	std::cout << u8"                 ,:~;:~,                                     \n";
+	std::cout << u8"                  .,;;.                                      \n";
+	std::cout << u8"                    ,:                                       \n";
+	cout << '\n';
+
+	SetConsoleOutputCP(originalCP);
+
+	Sleep(1500);
+	for (char x : ENDMSG_SUCCESS)
+		cout << x, Sleep(100);
+	cout << "\n\n";
+	string earned_str = to_string(value);
+
+	string str = "번 돈:";
+	str+=earned_str;
+	for (char x : str)
+		cout << x, Sleep(100);
+	cout << "\n\n";
+
+	if (value > best_score) {
+		ofstream outFile("bestscore.txt");
+
+		outFile << earned_str;
+		outFile.close();
+	}
+
+	SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
+	system("pause");
 }
 
 void Fail() {
@@ -802,12 +871,20 @@ void Escape(PPLAYER _pPlayer) {
 	cout << "\n\n";
 	cout << "당신의 생존 확률:" << _pPlayer->surv_percentage;
 	cout << "\n\n";
+
+
 	for (int i = 0; i < 3; i++) {
 		cout << '.';
 		Sleep(1500);
 	}
 
-	Fail();
+	uniform_int_distribution<int> dis(1, 99);
+	int gen = dis(gen);
+
+	if (gen <= _pPlayer->surv_percentage)
+		Survive(_pPlayer->value);
+	else
+		Fail();
 
 
 	Sleep(2000);
@@ -899,7 +976,7 @@ bool MainMenu() {
 	cout << u8"          ██║     ██╔══██╗██╔══██║╚════██║██╔══██║    ██║     ██╔══██║██║╚██╗██║██║  ██║██║██║╚██╗██║██║   ██║\n";
 	cout << u8"          ╚██████╗██║  ██║██║  ██║███████║██║  ██║    ███████╗██║  ██║██║ ╚████║██████╔╝██║██║ ╚████║╚██████╔╝\n";
 	cout << u8"           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ \n";
-	
+
 	SetConsoleOutputCP(originalCP);
 	Sleep(10);
 
@@ -908,7 +985,8 @@ bool MainMenu() {
 	string score_str;
 	getline(fin, score_str);
 	Gotoxy(41, 20);
-	cout << "당신의 최고점수:" << stoi(score_str);
+	best_score = stoi(score_str);
+	cout << "당신의 최고점수:" << best_score;
 
 	int x = 45;
 	int y = 25;
@@ -949,7 +1027,7 @@ bool MainMenu() {
 			{
 			case 72:
 			{
-				if (y > originy) 
+				if (y > originy)
 				{
 					Gotoxy(x - 2, y);
 					cout << " ";
