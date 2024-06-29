@@ -2,6 +2,7 @@
 #include <mmsystem.h>
 #include <Digitalv.h>
 #include <string>
+#pragma comment(lib, "winmm.lib")
 #include "mci.h"
 
 UINT Bgmid;
