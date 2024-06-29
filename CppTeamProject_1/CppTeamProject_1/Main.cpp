@@ -8,6 +8,7 @@
 #include<vector>
 #include<queue>
 #include<random>
+#include"mci.h"
 using namespace std;
 
 enum class OBJ_TYPE {
@@ -94,7 +95,7 @@ struct SYNERGY {
 	}
 };
 
-const int GAME_PLAYTIME = 1;
+const int GAME_PLAYTIME = 15;
 const int MAP_WIDTH = 76;
 const int MAP_HEIGHT = 13;
 const int MAG_RANGE = 3;
@@ -109,7 +110,7 @@ const POS TIMER_POS = { 40,1 };
 const POS SYNERGY_POS = { 1,14 };
 const time_t ITEM_DURATION = 5000;
 const int INF = 1e9;
-const string PLAYER_STR = "¡Ù";
+const string PLAYER_STR = "¡Ú";
 
 const int dx[]{ -1,1,0,0,1,1,-1,-1 };
 const int dy[]{ 0,0,-1,1,1,-1,1,-1 };
@@ -448,7 +449,7 @@ void UseMagnatic(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) 
 	//Pick(_arrmap[_pPlayer->tPos.y][_pPlayer->tPos.x], _pPlayer);
 }
 
-void MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
+bool MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
 {
 	_pPlayer->tNewPos = _pPlayer->tPos;
 
@@ -474,7 +475,11 @@ void MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
 			current_side = _pPlayer->tPos.x / SIDE_SIZE;
 			used = 1;
 		}
+		if (_pPlayer->speedUp)
+			Sleep(20);
 	}
+
+	return true;
 }
 
 void PickUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
@@ -704,7 +709,7 @@ void FireEnding() {
 
 void Escape(PPLAYER _pPlayer) {
 	system("cls");
-	cout << "ÈÞ »ì¾Ò´Ù";
+	cout << "Å»Ãâ ¼º°ø~";
 
 	Sleep(2000);
 }
