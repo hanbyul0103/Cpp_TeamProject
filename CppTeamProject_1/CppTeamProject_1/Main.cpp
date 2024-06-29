@@ -78,9 +78,23 @@ struct SYNERGY {
 	string name;
 	int surv_plus;
 	vector<OBJ_TYPE> needing_item;
+	vector<bool> item_collected;
+	int collected_cnt = 0;
+	bool completed = false;
+	COLOR color;
+
+	SYNERGY(string name, int surv_plus, vector<OBJ_TYPE> needing_item, COLOR color) :name(name)
+		, surv_plus(surv_plus), needing_item(needing_item), color(color) {
+		item_collected = vector<bool>(needing_item.size());
+	}
+
+	bool operator<(const SYNERGY& x) const {
+		return (completed ? 0 : (float)collected_cnt / needing_item.size()) >
+			(x.completed ? 0 : (float)x.collected_cnt / x.needing_item.size());
+	}
 };
 
-const int GAME_PLAYTIME = 30;
+const int GAME_PLAYTIME = 1;
 const int MAP_WIDTH = 76;
 const int MAP_HEIGHT = 13;
 const int MAG_RANGE = 3;
@@ -92,6 +106,7 @@ const int ITEM_CNT = 30;
 const int USABLE_CNT = 2;
 const int ITEM_FIRST = 57;
 const POS TIMER_POS = { 40,1 };
+const POS SYNERGY_POS = { 1,14 };
 const time_t ITEM_DURATION = 5000;
 const int INF = 1e9;
 const string PLAYER_STR = "☆";
@@ -170,7 +185,6 @@ map<OBJ_TYPE, float> obj_popout;
 vector<SYNERGY> synergy_vec;
 
 bool collected[ITEM_SPECIES];
-bool synergy_completed[SYNERGY_SPECIES];
 int start_time, left_time;
 
 BOOL Gotoxy(int _x, int _y)
@@ -228,16 +242,47 @@ void Render(vector<char> _map[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 
 	SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
 	for (int i = 0; i < 5; i++) {		//Time Render
-		Gotoxy(TIMER_POS.x, TIMER_POS.y+i);	
+		Gotoxy(TIMER_POS.x, TIMER_POS.y + i);
 		cout << time_art[left_time / 10][i] << "  " << time_art[left_time % 10][i];
 	}
 
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 2);		//clear
-	cout << "                           ";
+	cout << "생존 확률:         ";
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 2);		//Survival Percentage Render
 	cout << "생존 확률: " << _pPlayer->surv_percentage << '%';
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 3);		//Item Value Render
 	cout << "아이템 가치: " << _pPlayer->value;
+
+	int i = 0;
+	for (auto synergy : synergy_vec) {
+		if (synergy.collected_cnt == 0)
+			continue;
+
+		if (i % 3 == 0) {
+			Gotoxy(SYNERGY_POS.x, SYNERGY_POS.y + i / 3);
+			cout << "                                    \n";		//clear
+			Gotoxy(SYNERGY_POS.x, SYNERGY_POS.y + i / 3);
+		}
+
+		if (synergy.completed)
+			SetColor((int)synergy.color, (int)COLOR::BLACK);
+		else
+			SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
+		cout << synergy.name << ":";
+
+		int j = 0;
+		for (auto obj : synergy.needing_item) {
+			if (synergy.item_collected[j])
+				SetColor((int)synergy.color, (int)COLOR::BLACK);
+			else
+				SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
+			cout << obj_icon[obj];
+			j++;
+		}
+		cout << "  ";
+
+		i++;
+	}
 
 	/*cout << "△:" << _pPlayer->speedcnt << ' ';
 	cout << "∪:" << _pPlayer->magnetcnt << ' ';
@@ -303,8 +348,11 @@ bool ItemUsing(PPLAYER _pPlayer) {
 	return _pPlayer->speedUp;
 }
 
-void TimeUpdate() {
-	left_time = GAME_PLAYTIME- (clock() - start_time) / 1000;
+bool TimeUpdate() {
+	if ((left_time = GAME_PLAYTIME - (clock() - start_time) / 1000) >= 0)
+		return true;
+	else
+		return false;
 }
 
 void Pick(vector<char>& vec, PPLAYER _pPlayer) {
@@ -330,20 +378,24 @@ void Pick(vector<char>& vec, PPLAYER _pPlayer) {
 			collected[(int)obj] = true;
 
 			int i = 0;
-			for (auto synergy : synergy_vec) {
-				if (!synergy_completed[i]) {
-					bool completed = true;
-					for (auto obj : synergy.needing_item)
-						if (!collected[(int)obj])
-							completed = false;
-					if (completed) {
-						synergy_completed[i] = true;
+			for (auto& synergy : synergy_vec) {
+				if (!synergy.completed) {
+					int cnt = 0;
+					int j = 0;
+					for (auto obj : synergy.needing_item) {
+						if (collected[(int)obj])
+							synergy.item_collected[j] = true, cnt++;
+						j++;
+					}
+					synergy.collected_cnt = cnt;
+					if (cnt == synergy.needing_item.size()) {
+						synergy.completed = true;
 						_pPlayer->surv_percentage += synergy.surv_plus;
-						cout << "\n\n\n" << synergy.name;
 					}
 				}
 				i++;
 			}
+			sort(synergy_vec.begin(), synergy_vec.end());
 
 			break;
 		}
@@ -451,6 +503,9 @@ void ItemUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 }
 
 void ItemInit() {
+	fill(collected, collected + ITEM_SPECIES, 0);
+	synergy_vec.clear();
+
 	obj_icon[OBJ_TYPE::ROAD] = "  ";
 	obj_icon[OBJ_TYPE::WALL] = "  ";
 	obj_icon[OBJ_TYPE::SIT] = "■";
@@ -581,14 +636,14 @@ void ItemInit() {
 	obj_popout[OBJ_TYPE::TISSUE] = 14;
 	obj_popout[OBJ_TYPE::RADIOS] = 1;
 
-	synergy_vec.push_back({ "오물",24,{OBJ_TYPE::TRASH,OBJ_TYPE::FILTHBAG,OBJ_TYPE::TISSUE} });
-	synergy_vec.push_back({ "모험자" ,12,{OBJ_TYPE::MIRROR, OBJ_TYPE::WATER, OBJ_TYPE::FLASHLIGHT, OBJ_TYPE::KNIFE} });
-	synergy_vec.push_back({ "맥가이버",9,{OBJ_TYPE::KNIFE, OBJ_TYPE::AXE} });
-	synergy_vec.push_back({ "멋쟁이",15,{OBJ_TYPE::SUNGLASS, OBJ_TYPE::LONGCOAT, OBJ_TYPE::MIRROR } });
-	synergy_vec.push_back({ "산신령",24,{OBJ_TYPE::AXE, OBJ_TYPE::GOLDRING, OBJ_TYPE::SILVERRING} });
-	synergy_vec.push_back({ "앱등이",50,{OBJ_TYPE::MACBOOK, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS, OBJ_TYPE::IPAD, OBJ_TYPE::MAX} });
-	synergy_vec.push_back({ "홍상화",10,{OBJ_TYPE::GLASSES, OBJ_TYPE::KEYBOARD} });
-	synergy_vec.push_back({ "이한별",10,{OBJ_TYPE::GLASSES, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS} });
+	synergy_vec.push_back(SYNERGY("오물", 24, { OBJ_TYPE::TRASH,OBJ_TYPE::FILTHBAG,OBJ_TYPE::TISSUE }, COLOR::VOILET));
+	synergy_vec.push_back(SYNERGY("모험자", 12, { OBJ_TYPE::MIRROR, OBJ_TYPE::WATER, OBJ_TYPE::FLASHLIGHT, OBJ_TYPE::KNIFE }, COLOR::RED));
+	synergy_vec.push_back(SYNERGY("맥가이버", 9, { OBJ_TYPE::KNIFE, OBJ_TYPE::AXE }, COLOR::BLUE));
+	synergy_vec.push_back(SYNERGY("멋쟁이", 15, { OBJ_TYPE::SUNGLASS, OBJ_TYPE::LONGCOAT, OBJ_TYPE::MIRROR }, COLOR::YELLOW));
+	synergy_vec.push_back(SYNERGY("산신령", 24, { OBJ_TYPE::AXE, OBJ_TYPE::GOLDRING, OBJ_TYPE::SILVERRING }, COLOR::LIGHT_GREEN));
+	synergy_vec.push_back(SYNERGY("앱등이", 50, { OBJ_TYPE::MACBOOK, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS, OBJ_TYPE::IPAD, OBJ_TYPE::MAX }, COLOR::MINT));
+	synergy_vec.push_back(SYNERGY("홍상화", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::KEYBOARD }, COLOR::GREEN));
+	synergy_vec.push_back(SYNERGY("이한별", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS }, COLOR::SKYBLUE));
 
 	obj_bgcolor[OBJ_TYPE::WALL] = COLOR::GRAY;
 	obj_bgcolor[OBJ_TYPE::ROAD] = COLOR::LIGHT_GRAY;
@@ -640,14 +695,25 @@ void SpreadItem(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], vector<POS>& leftSp
 	}
 }
 
-int main() {
-	static vector<char> arrmap[MAP_HEIGHT][MAP_WIDTH];
+void FireEnding() {
+	system("cls");
+	cout << "당신은 불타 죽었습니다\n";
+	system("pause");
 
-	ItemInit();
+}
+
+void Escape(PPLAYER _pPlayer) {
+	system("cls");
+	cout << "휴 살았다";
+
+	Sleep(2000);
+}
+
+void GameStart() {
+	static vector<char> arrmap[MAP_HEIGHT][MAP_WIDTH];
 
 	ifstream fin;
 	fin.open("GPMap.txt");
-
 	string line;
 	int row = 0;
 	vector<POS> leftSpot;
@@ -665,6 +731,8 @@ int main() {
 
 	fin.close();
 
+	ItemInit();
+
 	PLAYER player;
 	player.tPos = { 1,6 };
 
@@ -678,7 +746,16 @@ int main() {
 		MoveUpdate(arrmap, &player);
 		PickUpdate(arrmap, &player);
 		ItemUpdate(arrmap, &player);
-		TimeUpdate();
+		if (!TimeUpdate()) {
+			FireEnding();
+			break;
+		}
 		Render(arrmap, &player);
+	}
+}
+
+int main() {
+	while (true) {
+		GameStart();
 	}
 }
