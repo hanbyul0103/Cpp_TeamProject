@@ -1,4 +1,4 @@
-#include<Windows.h>
+﻿#include<Windows.h>
 #include<conio.h>
 #include<iostream>
 #include<algorithm>
@@ -9,6 +9,7 @@
 #include<queue>
 #include<random>
 #include"mci.h"
+#include"title.h"
 using namespace std;
 
 enum class OBJ_TYPE {
@@ -95,7 +96,7 @@ struct SYNERGY {
 	}
 };
 
-const int GAME_PLAYTIME = 15;
+const int GAME_PLAYTIME = 10;
 const int MAP_WIDTH = 76;
 const int MAP_HEIGHT = 13;
 const int MAG_RANGE = 3;
@@ -107,74 +108,78 @@ const int ITEM_CNT = 30;
 const int USABLE_CNT = 2;
 const int ITEM_FIRST = 57;
 const POS TIMER_POS = { 40,1 };
-const POS SYNERGY_POS = { 1,14 };
+const POS SYNERGY_POS = { 1,15 };
 const time_t ITEM_DURATION = 5000;
 const int INF = 1e9;
-const string PLAYER_STR = "��";
+const string PLAYER_STR = "★";
+
+const string ENDMSG_FIRE = "당신은 불 타 죽었습니다.";
+const string ENDMSG_FAIL = "당신은 목이 말라 죽었습니다.";
+const string ENDMSG_SUCCESS = "당신은 생존에 성공했습니다!!";
 
 const int dx[]{ -1,1,0,0,1,1,-1,-1 };
 const int dy[]{ 0,0,-1,1,1,-1,1,-1 };
 
 const string time_art[10][5]{
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"■    ■"
+	,"■□□■"
+	,"■    ■"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"□□□■"
+	,"□    ■"
+	,"□□□■"
+	,"□    ■"
+	,"□□□■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"□    ■"
+	,"■■■■"
+	,"■    □"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"□    ■"
+	,"■■■■"
+	,"□    ■"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■□□■"
+	,"■    ■"
+	,"■■■■"
+	,"□    ■"
+	,"□□□■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"■    □"
+	,"■■■■"
+	,"□    ■"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"■    □"
+	,"■■■■"
+	,"■    ■"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"□    ■"
+	,"□□□■"
+	,"□    ■"
+	,"□□□■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"},
+	{"■■■■"
+	,"■    ■"
+	,"■■■■"
+	,"■    ■"
+	,"■■■■"},
 
-	{"�����"
-	,"��    ��"
-	,"�����"
-	,"��    ��"
-	,"�����"}
+	{"■■■■"
+	,"■    ■"
+	,"■■■■"
+	,"□    ■"
+	,"□□□■"}
 };
 
 map<OBJ_TYPE, string> obj_icon;
@@ -198,7 +203,7 @@ BOOL Gotoxy(int _x, int _y)
 void SetCursorVis(bool _vis, DWORD _size) {
 	CONSOLE_CURSOR_INFO curInfo;
 	curInfo.bVisible = _vis; // True: On, false: Off
-	curInfo.dwSize = _size; // Ŀ�� ���� (1~100)
+	curInfo.dwSize = _size; // 커서 굵기 (1~100)
 	SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &curInfo);
 }
 
@@ -248,11 +253,15 @@ void Render(vector<char> _map[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 	}
 
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 2);		//clear
-	cout << "���� Ȯ��:         ";
+	cout << "생존 확률:         ";
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 2);		//Survival Percentage Render
-	cout << "���� Ȯ��: " << _pPlayer->surv_percentage << '%';
+	cout << "생존 확률: " << _pPlayer->surv_percentage << '%';
 	Gotoxy(TIMER_POS.x, TIMER_POS.y + 5 + 3);		//Item Value Render
-	cout << "������ ��ġ: " << _pPlayer->value;
+	cout << "아이템 가치: " << _pPlayer->value;
+
+	Gotoxy(SYNERGY_POS.x, SYNERGY_POS.y-2);
+	cout << obj_icon[OBJ_TYPE::SPEED] << ':' << _pPlayer->speedcnt << ' ';
+	cout << obj_icon[OBJ_TYPE::MAGNET] << ':' << _pPlayer->magnetcnt << ' ';
 
 	int i = 0;
 	for (auto synergy : synergy_vec) {
@@ -284,11 +293,6 @@ void Render(vector<char> _map[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 
 		i++;
 	}
-
-	/*cout << "��:" << _pPlayer->speedcnt << ' ';
-	cout << "��:" << _pPlayer->magnetcnt << ' ';
-	cout << "SURV:" << _pPlayer->surv_percentage << ' ';
-	cout << "VAL:" << _pPlayer->value << ' ';*/
 }
 
 bool Moveable(OBJ_TYPE obj) {
@@ -468,7 +472,8 @@ bool MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
 	if (!pressed)
 		used = 0;
 
-	if (Moveable((OBJ_TYPE)_arrmap[_pPlayer->tNewPos.y][_pPlayer->tNewPos.x][0]) && (!used || _pPlayer->speedUp))
+	if ((_pPlayer->tNewPos.x == -1|| Moveable((OBJ_TYPE)_arrmap[_pPlayer->tNewPos.y][_pPlayer->tNewPos.x][0])) 
+		&& (!used || _pPlayer->speedUp))
 	{
 		if (_pPlayer->tPos.x != _pPlayer->tNewPos.x || _pPlayer->tPos.y != _pPlayer->tNewPos.y) {
 			_pPlayer->tPos = _pPlayer->tNewPos;
@@ -476,15 +481,16 @@ bool MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
 			used = 1;
 		}
 		if (_pPlayer->speedUp)
-			Sleep(20);
+			Sleep(15);
 	}
-
+	if (_pPlayer->tPos.x == -1)
+		return false;
 	return true;
 }
 
 void PickUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) {
 	auto& vec = _arrmap[_pPlayer->tPos.y][_pPlayer->tPos.x];
-	if (GetAsyncKeyState(0x41) & 0x8000) {
+	if (GetAsyncKeyState(VK_SPACE) & 0x8000) {
 		Pick(vec, _pPlayer);
 	}
 }
@@ -513,42 +519,42 @@ void ItemInit() {
 
 	obj_icon[OBJ_TYPE::ROAD] = "  ";
 	obj_icon[OBJ_TYPE::WALL] = "  ";
-	obj_icon[OBJ_TYPE::SIT] = "��";
-	obj_icon[OBJ_TYPE::SPEED] = "��";
-	obj_icon[OBJ_TYPE::MAGNET] = "��";
+	obj_icon[OBJ_TYPE::SIT] = "■";
+	obj_icon[OBJ_TYPE::SPEED] = "♨";
+	obj_icon[OBJ_TYPE::MAGNET] = "∪";
 
-	// ����
-	obj_icon[OBJ_TYPE::MIRROR] = "��";
-	obj_icon[OBJ_TYPE::LONGCOAT] = "��";
-	obj_icon[OBJ_TYPE::WATER] = "�";
-	obj_icon[OBJ_TYPE::FLASHLIGHT] = "��";
-	obj_icon[OBJ_TYPE::PARACHUTE] = "��";
+	// 문자
+	obj_icon[OBJ_TYPE::MIRROR] = "⊙";
+	obj_icon[OBJ_TYPE::LONGCOAT] = "♀";
+	obj_icon[OBJ_TYPE::WATER] = "水";
+	obj_icon[OBJ_TYPE::FLASHLIGHT] = "†";
+	obj_icon[OBJ_TYPE::PARACHUTE] = "⌒";
 	obj_icon[OBJ_TYPE::KNIFE] = "4 ";
-	obj_icon[OBJ_TYPE::RAINCOAT] = "��";
-	obj_icon[OBJ_TYPE::PISTOL] = "�� ";
-	obj_icon[OBJ_TYPE::SUNGLASS] = "��";
-	obj_icon[OBJ_TYPE::BANDAID] = "��";
-	obj_icon[OBJ_TYPE::AXE] = "��";
-	obj_icon[OBJ_TYPE::GOLDRING] = "��";
-	obj_icon[OBJ_TYPE::SILVERRING] = "��";
-	obj_icon[OBJ_TYPE::MACBOOK] = "��";
-	obj_icon[OBJ_TYPE::IPHONE] = "��";
-	obj_icon[OBJ_TYPE::AIRPODS] = "��";
-	obj_icon[OBJ_TYPE::MAX] = "��";
-	obj_icon[OBJ_TYPE::IPAD] = "��";
-	obj_icon[OBJ_TYPE::CHANDELIER] = "��";
-	obj_icon[OBJ_TYPE::TRASH] = "��";
-	obj_icon[OBJ_TYPE::FILTHBAG] = "��";
-	obj_icon[OBJ_TYPE::BALLPEN] = "��";
-	obj_icon[OBJ_TYPE::ERASER] = "��";
-	obj_icon[OBJ_TYPE::NOTEPAD] = "��";
-	obj_icon[OBJ_TYPE::KEYBOARD] = "��";
-	obj_icon[OBJ_TYPE::BOOK] = "��";
-	obj_icon[OBJ_TYPE::GLASSES] = "��";
-	obj_icon[OBJ_TYPE::TISSUE] = "��";
-	obj_icon[OBJ_TYPE::RADIOS] = "��";
+	obj_icon[OBJ_TYPE::RAINCOAT] = "ㅿ";
+	obj_icon[OBJ_TYPE::PISTOL] = "┒ ";
+	obj_icon[OBJ_TYPE::SUNGLASS] = "∞";
+	obj_icon[OBJ_TYPE::BANDAID] = "ロ";
+	obj_icon[OBJ_TYPE::AXE] = "Ｐ";
+	obj_icon[OBJ_TYPE::GOLDRING] = "ⓖ";
+	obj_icon[OBJ_TYPE::SILVERRING] = "ⓢ";
+	obj_icon[OBJ_TYPE::MACBOOK] = "ㅮ";
+	obj_icon[OBJ_TYPE::IPHONE] = "☏";
+	obj_icon[OBJ_TYPE::AIRPODS] = "♬";
+	obj_icon[OBJ_TYPE::MAX] = "Ω";
+	obj_icon[OBJ_TYPE::IPAD] = "∏";
+	obj_icon[OBJ_TYPE::CHANDELIER] = "Ψ";
+	obj_icon[OBJ_TYPE::TRASH] = "ひ";
+	obj_icon[OBJ_TYPE::FILTHBAG] = "δ";
+	obj_icon[OBJ_TYPE::BALLPEN] = "¡";
+	obj_icon[OBJ_TYPE::ERASER] = "Ｄ";
+	obj_icon[OBJ_TYPE::NOTEPAD] = "≡";
+	obj_icon[OBJ_TYPE::KEYBOARD] = "▦";
+	obj_icon[OBJ_TYPE::BOOK] = "∈";
+	obj_icon[OBJ_TYPE::GLASSES] = "ㆅ";
+	obj_icon[OBJ_TYPE::TISSUE] = "▤";
+	obj_icon[OBJ_TYPE::RADIOS] = "】";
 
-	// ���� Ȯ��
+	// 생존 확률
 	obj_surv[OBJ_TYPE::MIRROR] = 12;
 	obj_surv[OBJ_TYPE::LONGCOAT] = 7;
 	obj_surv[OBJ_TYPE::WATER] = 16;
@@ -579,7 +585,7 @@ void ItemInit() {
 	obj_surv[OBJ_TYPE::TISSUE] = 3;
 	obj_surv[OBJ_TYPE::RADIOS] = 90;
 
-	// ��ġ
+	// 가치
 	obj_value[OBJ_TYPE::MIRROR] = 5000;
 	obj_value[OBJ_TYPE::LONGCOAT] = 100000;
 	obj_value[OBJ_TYPE::WATER] = 800;
@@ -610,7 +616,7 @@ void ItemInit() {
 	obj_value[OBJ_TYPE::TISSUE] = 1000;
 	obj_value[OBJ_TYPE::RADIOS] = 550000;
 
-	// ���� Ȯ��
+	// 등장 확률
 	obj_popout[OBJ_TYPE::MIRROR] = 49;
 	obj_popout[OBJ_TYPE::LONGCOAT] = 62;
 	obj_popout[OBJ_TYPE::WATER] = 82;
@@ -641,14 +647,14 @@ void ItemInit() {
 	obj_popout[OBJ_TYPE::TISSUE] = 14;
 	obj_popout[OBJ_TYPE::RADIOS] = 1;
 
-	synergy_vec.push_back(SYNERGY("����", 24, { OBJ_TYPE::TRASH,OBJ_TYPE::FILTHBAG,OBJ_TYPE::TISSUE }, COLOR::VOILET));
-	synergy_vec.push_back(SYNERGY("������", 12, { OBJ_TYPE::MIRROR, OBJ_TYPE::WATER, OBJ_TYPE::FLASHLIGHT, OBJ_TYPE::KNIFE }, COLOR::RED));
-	synergy_vec.push_back(SYNERGY("�ư��̹�", 9, { OBJ_TYPE::KNIFE, OBJ_TYPE::AXE }, COLOR::BLUE));
-	synergy_vec.push_back(SYNERGY("������", 15, { OBJ_TYPE::SUNGLASS, OBJ_TYPE::LONGCOAT, OBJ_TYPE::MIRROR }, COLOR::YELLOW));
-	synergy_vec.push_back(SYNERGY("��ŷ�", 24, { OBJ_TYPE::AXE, OBJ_TYPE::GOLDRING, OBJ_TYPE::SILVERRING }, COLOR::LIGHT_GREEN));
-	synergy_vec.push_back(SYNERGY("�۵���", 50, { OBJ_TYPE::MACBOOK, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS, OBJ_TYPE::IPAD, OBJ_TYPE::MAX }, COLOR::MINT));
-	synergy_vec.push_back(SYNERGY("ȫ��ȭ", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::KEYBOARD }, COLOR::GREEN));
-	synergy_vec.push_back(SYNERGY("���Ѻ�", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS }, COLOR::SKYBLUE));
+	synergy_vec.push_back(SYNERGY("오물", 24, { OBJ_TYPE::TRASH,OBJ_TYPE::FILTHBAG,OBJ_TYPE::TISSUE }, COLOR::VOILET));
+	synergy_vec.push_back(SYNERGY("모험자", 12, { OBJ_TYPE::MIRROR, OBJ_TYPE::WATER, OBJ_TYPE::FLASHLIGHT, OBJ_TYPE::KNIFE }, COLOR::RED));
+	synergy_vec.push_back(SYNERGY("맥가이버", 9, { OBJ_TYPE::KNIFE, OBJ_TYPE::AXE }, COLOR::BLUE));
+	synergy_vec.push_back(SYNERGY("멋쟁이", 15, { OBJ_TYPE::SUNGLASS, OBJ_TYPE::LONGCOAT, OBJ_TYPE::MIRROR }, COLOR::YELLOW));
+	synergy_vec.push_back(SYNERGY("산신령", 24, { OBJ_TYPE::AXE, OBJ_TYPE::GOLDRING, OBJ_TYPE::SILVERRING }, COLOR::LIGHT_GREEN));
+	synergy_vec.push_back(SYNERGY("앱등이", 50, { OBJ_TYPE::MACBOOK, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS, OBJ_TYPE::IPAD, OBJ_TYPE::MAX }, COLOR::MINT));
+	synergy_vec.push_back(SYNERGY("홍상화", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::KEYBOARD }, COLOR::GREEN));
+	synergy_vec.push_back(SYNERGY("이한별", 10, { OBJ_TYPE::GLASSES, OBJ_TYPE::IPHONE, OBJ_TYPE::AIRPODS }, COLOR::SKYBLUE));
 
 	obj_bgcolor[OBJ_TYPE::WALL] = COLOR::GRAY;
 	obj_bgcolor[OBJ_TYPE::ROAD] = COLOR::LIGHT_GRAY;
@@ -702,19 +708,134 @@ void SpreadItem(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], vector<POS>& leftSp
 
 void FireEnding() {
 	system("cls");
-	cout << "����� ��Ÿ �׾����ϴ�\n";
+	SetCursorVis(false, 1);
+
+	UINT originalCP = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_UTF8);
+
+	SetColor((int)COLOR::LIGHT_RED, (int)COLOR::BLACK);
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢇⠇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠄⠀⠀⠀⠀⠀⠀⠀⠀⡄⠀⠀⠀⠀⡘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⡹⡄⠀⠀⠀⠀⠀⠀⠀⡜⡆⠀⡢⠂⠀⠀⡰⡘⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢣⠣⠀⢀⠀⠀⢠⠀⢐⢕⢕⡀⠀⡜⡄⡜⡜⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⠈⠀⠀⠇⠁⠀⢸⢱⢪⡪⡣⡫⡣⡣⡣⣣⢣⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡰⡅⠀⠀⠀⡰⣕⠀⠘⡎⡇⡇⡏⣎⢇⢏⢮⢪⡪⡣⡣⡢⡲⡀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢜⠜⠀⢀⢆⠀⡇⡗⡄⠀⠈⢎⢞⢜⢜⢜⢜⢜⢜⢜⢜⢎⢇⢏⢎⢗⡀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⢀⢔⡕⡝⣆⠀⠸⡸⡱⡱⡕⡝⡆⡖⡕⡇⢇⢇⢣⢣⢣⢫⢪⢪⢣⢳⢱⢣⡃⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⡏⠀⡎⡮⡪⡎⡮⡢⡄⡏⡮⡺⡸⡪⣪⢺⢸⠸⡨⡪⡢⡣⡣⡣⡣⡳⡱⡕⡕⠁⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⢀⠁⠈⢮⢪⢪⢪⡪⡪⡎⡮⡪⡪⡪⡺⡸⡸⡨⡪⡪⠢⡪⡪⡪⡪⡪⡪⡎⡎⡎⠀⡤⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⡎⡦⣀⡸⡸⡸⡘⡜⡜⡜⡪⡪⡪⡪⡪⡪⡪⡊⡪⡨⡨⡨⡢⡪⡪⡪⡪⡪⡪⡺⡰⡀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⡇⡏⡮⡪⡺⡸⡸⡘⡜⡜⡜⡌⡪⠪⡂⡊⡪⠢⠢⠢⡂⡪⡪⡪⡪⡪⡪⡪⡺⡸⠅⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠱⡱⡕⡕⡕⡕⡕⡕⡌⡪⠪⠪⡂⡪⡨⡨⡂⡊⡊⡊⡪⠢⡂⡪⡨⡨⡪⡪⡪⡺⡸⠅⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠈⠊⠎⠎⠎⠎⠎⠎⢎⢊⠪⠢⠢⢂⠪⠨⠨⠨⠢⠪⠨⠢⠢⠢⠪⠪⠪⠺⠸⠊⠀⠀⠂⠀⠀⠀\n";
+	cout << '\n';
+
+	SetConsoleOutputCP(originalCP);
+
+	Sleep(1500);
+	for (char x : ENDMSG_FIRE)
+		cout << x, Sleep(100);
+	cout << "\n\n";
+
+	SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
 	system("pause");
 
 }
 
+void Survive() {
+
+}
+
+void Fail() {
+	system("cls");
+	SetCursorVis(false, 1);
+
+	UINT originalCP = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_UTF8);
+
+	SetColor((int)COLOR::LIGHT_RED, (int)COLOR::BLACK);
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⣀⢧⢴⢥⢼⣀⡠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢲⡪⡣⡃⢇⢇⢇⢇⢗⡖⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢙⡇⢇⢪⢸⢨⢢⢣⢣⢣⢫⡋⠀⠀⠀⠀⠀⠀⠀⡀⠀⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢱⢇⢣⠱⡑⡌⡆⡇⡇⢧⢹⡞⠂⠀⠀⠀⠀⡤⡜⢞⢪⢳⢤⠆⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢪⡇⡣⡃⡇⡕⢜⢜⢜⢕⢕⡗⠂⠀⠀⠀⠠⣎⢇⢣⢱⢱⢹⡆⠄⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⢼⡪⡸⡐⡕⢜⢸⢸⢸⢸⢸⠧⠂⠀⠀⠀⠰⡇⡇⡕⢜⢜⢜⣎⡀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⢼⡪⠢⡣⠪⡊⡎⢎⢎⢎⢮⠧⠂⠀⠀⠀⠤⡗⡕⢜⢌⢖⢕⡇⠁⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⢜⡎⡕⡌⢇⢕⢜⢕⢕⢕⢕⡧⠄⠀⠀⠀⣀⡏⡎⡢⢣⢪⢪⠧⠄⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠀⢀⠀⠀⠀⠀⠀⠀⠀⣜⡎⢆⢣⠣⡱⢸⢸⢸⢸⢸⡣⡀⠀⠀⠀⣄⡏⡎⢜⢌⢎⢮⡇⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠰⡦⢞⠫⡛⡦⡤⠀⠀⠀⠀⢀⣸⢪⢊⢆⢣⢱⢑⢕⢕⢕⠵⡇⠀⡀⠀⣆⢴⢣⠱⡑⡅⣇⣳⠓⠁⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠠⢼⡪⡣⡣⡱⡸⢵⠄⠀⠀⠀⠀⢸⢕⢱⢘⢌⢆⠇⡇⡇⡇⣝⡇⡗⢝⢝⢱⢑⢅⢇⢣⢣⢲⠳⠄⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⣀⣸⢎⢎⢆⢕⢌⢷⠆⠀⠀⠀⠈⢹⢕⢅⢣⢱⢘⢜⢜⢜⢜⢜⡇⡎⡪⢢⠣⡱⡸⡸⡸⡼⢭⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⢱⢇⢇⢕⠜⡔⡳⠔⠀⠀⠀⠐⢱⢇⢕⢱⢘⢌⢆⢇⢇⢇⡳⣇⢇⢎⢎⣎⣎⠮⠎⠯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠐⢾⡱⡱⡡⢣⠪⣝⡄⠀⠀⠀⠠⢮⢇⠎⡆⡣⡱⡸⡸⡸⡸⡸⡇⠉⠉⡏⠈⠀⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⢸⢎⢎⢪⠪⡸⣸⡠⠀⠀⠀⢀⢸⢕⢅⢣⢱⢘⢔⢕⢕⢕⢭⡇⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠈⠩⣇⢇⢇⢕⠕⡜⢵⣰⠀⡠⡀⢩⢇⢎⠪⡂⡇⢕⢕⢕⢕⢕⡷⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠐⢓⣇⢇⢇⢕⠜⡜⢌⢫⠹⡪⡫⡇⢎⢪⠪⡸⡘⡜⡜⡜⣜⣇⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠠⡚⢮⡪⣒⢕⢱⢑⢕⠱⡑⢼⡣⢣⠱⡡⢣⠪⡪⡪⡪⡪⡆⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠏⠚⢮⢎⣎⢎⡎⣎⢞⡕⢕⠱⡑⡅⡇⡇⡇⢧⢹⡍⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠀⠈⠹⠉⠉⢩⢇⢣⢃⢇⢕⢜⢜⢜⢕⢕⡗⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠠⢼⢕⢅⢇⢪⠢⡱⡱⡱⡱⡱⡧⠄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡸⡕⡌⡆⡣⡱⡑⡕⡕⡕⣹⣅⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢩⡇⢎⢜⢌⢆⢣⢣⢣⢣⢣⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⢳⡣⢣⠱⡨⡢⢣⢣⢣⢣⢳⡋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << u8"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢸⣪⣪⣪⣪⣜⣬⣪⢎⣮⡪⡮⡇⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
+	cout << '\n';
+
+	SetConsoleOutputCP(originalCP);
+
+	Sleep(1500);
+	for (char x : ENDMSG_FAIL)
+		cout << x, Sleep(100);
+	cout << "\n\n";
+
+	SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
+	system("pause");
+}
+
 void Escape(PPLAYER _pPlayer) {
 	system("cls");
-	cout << "Ż�� ����~";
+	SetColor((int)COLOR::WHITE, (int)COLOR::BLACK);
+	cout << "탈출 성공~";
+	Sleep(1500);
+	cout << "\n\n";
+	cout << "당신의 생존 확률:" << _pPlayer->surv_percentage;
+	cout << "\n\n";
+	for (int i = 0; i < 3; i++) {
+		cout << '.';
+		Sleep(1500);
+	}
+
+	Fail();
+
 
 	Sleep(2000);
 }
 
+void FrameSync(unsigned int _Framerate)
+{
+	clock_t oldtime = clock();
+	clock_t curtime;
+
+	while (true)
+	{
+		curtime = clock();
+		if (curtime - oldtime > 1000 / _Framerate)
+		{
+			oldtime = curtime;
+			break;
+		}
+	}
+}
+
+void GameInfo() {
+
+}
+
 void GameStart() {
+	system("cls");
+
 	static vector<char> arrmap[MAP_HEIGHT][MAP_WIDTH];
 
 	ifstream fin;
@@ -748,19 +869,116 @@ void GameStart() {
 
 	start_time = clock(), left_time = GAME_PLAYTIME;
 	while (true) {
-		MoveUpdate(arrmap, &player);
-		PickUpdate(arrmap, &player);
-		ItemUpdate(arrmap, &player);
 		if (!TimeUpdate()) {
 			FireEnding();
 			break;
 		}
+		if (!MoveUpdate(arrmap, &player)) {
+			Escape(&player);
+			break;
+		}
+		PickUpdate(arrmap, &player);
+		ItemUpdate(arrmap, &player);
 		Render(arrmap, &player);
+		FrameSync(120);
 	}
 }
 
-int main() {
-	while (true) {
-		GameStart();
+bool MainMenu() {
+	system("cls");
+
+	bool quit_game = false;
+	Gotoxy(0, 5);
+	SetFontSize(FW_BOLD, 23, 23);
+
+	UINT originalCP = GetConsoleOutputCP();
+	SetConsoleOutputCP(CP_UTF8);
+	cout << u8"           ██████╗██████╗  █████╗ ███████╗██╗  ██╗    ██╗      █████╗ ███╗   ██╗██████╗ ██╗███╗   ██╗ ██████╗ \n";
+	cout << u8"          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║  ██║    ██║     ██╔══██╗████╗  ██║██╔══██╗██║████╗  ██║██╔════╝ \n";
+	cout << u8"          ██║     ██████╔╝███████║███████╗███████║    ██║     ███████║██╔██╗ ██║██║  ██║██║██╔██╗ ██║██║  ███╗\n";
+	cout << u8"          ██║     ██╔══██╗██╔══██║╚════██║██╔══██║    ██║     ██╔══██║██║╚██╗██║██║  ██║██║██║╚██╗██║██║   ██║\n";
+	cout << u8"          ╚██████╗██║  ██║██║  ██║███████║██║  ██║    ███████╗██║  ██║██║ ╚████║██████╔╝██║██║ ╚████║╚██████╔╝\n";
+	cout << u8"           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═══╝╚═════╝ ╚═╝╚═╝  ╚═══╝ ╚═════╝ \n";
+	
+	SetConsoleOutputCP(originalCP);
+	Sleep(10);
+
+	ifstream fin;
+	fin.open("bestscore.txt");
+	string score_str;
+	getline(fin, score_str);
+	Gotoxy(41, 20);
+	cout << "당신의 최고점수:" << stoi(score_str);
+
+	int x = 45;
+	int y = 25;
+	int originy = y;
+	Gotoxy(x, y);
+	cout << "게임 시작";
+	Gotoxy(x, y + 1);
+	cout << "스토리 보기";
+	Gotoxy(x, y + 2);
+	cout << "종료 하기";
+
+	Gotoxy(x - 2, y);
+	cout << ">";
+	while (true)
+	{
+		//cin.ignore();
+		cin.clear();
+		while (!_kbhit()) { 0; }
+		int ch = _getch();
+
+		if (ch == 32) {
+			switch (y - originy) {
+			case 0:
+				GameStart();
+				break;
+			case 1:
+				ShowTitle();
+				break;
+			case 2:
+				quit_game = true;
+				break;
+			}
+			break;
+		}
+		else if (ch == 224) {
+			ch = _getch();
+			switch (ch)
+			{
+			case 72:
+			{
+				if (y > originy) 
+				{
+					Gotoxy(x - 2, y);
+					cout << " ";
+					Gotoxy(x - 2, --y);
+					cout << ">";
+				}
+			}
+			break;
+			case 80:
+			{
+				if (y < originy + 2)
+				{
+					Gotoxy(x - 2, y);
+					cout << " ";
+					Gotoxy(x - 2, ++y);
+					cout << ">";
+				}
+			}
+			break;
+			default:
+				break;
+			}
+		}
 	}
+	if (quit_game)
+		return false;
+	return true;
+}
+
+int main() {
+	while (MainMenu()) { 0; }
 }

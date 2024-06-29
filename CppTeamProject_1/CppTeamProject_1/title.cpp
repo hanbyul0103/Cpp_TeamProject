@@ -34,6 +34,8 @@ void ShakeWindow(int count) {
 }
 
 void ShowTitle() {
+	system("cls");
+	UINT originalCP = GetConsoleOutputCP();
 	SetConsoleOutputCP(65001);
 
 	MyMoveWindow(WIDTH / 7, HEIGHT / 7);
@@ -82,7 +84,7 @@ void ShowTitle() {
 					PlaySound(TEXT("SoundEffect/airplane.wav"), NULL, SND_FILENAME | SND_ASYNC);
 				}
 				else cout << line[i];
-				Sleep(sleepTime);
+				Sleep(1);
 			}
 
 			Sleep(600);
@@ -91,4 +93,5 @@ void ShowTitle() {
 
 		story.close();
 	}
+	SetConsoleOutputCP(originalCP);
 }
