@@ -3,36 +3,37 @@
 #include <fstream>
 #include <string>
 #include <conio.h>
+#include "title.h"
 #include "mci.h";
-
-#pragma comment(lib, "winmm.lib")
 
 using std::cin;
 using std::cout;
 
-void MyMoveWindow(int x, int y);
-void ShakeWindow(int count);
-
 const int WIDTH = 1920;
 const int HEIGHT = 1080;
 
-enum class Key {
-	SHAKE = 49, // 1
-	CLS = 50, // 2
-	REST = 51, // 3
-	NARR = 52, // 4
-	DANGER = 53, // 5
-	WARNING = 54, // 6
+void MyMoveWindow(int x, int y) {
+	HWND hwnd = GetConsoleWindow();
+	MoveWindow(hwnd, x, y, WIDTH / 2, HEIGHT / 2, TRUE);
+}
 
-	ANNOUNCE = 55, // 7
-	ANNOUNCE_DANGER = 56, // 8
-	ANNOUNCE_WARNING = 57, // 9
-	TAKE_OFF = 58, // :
-	
+void ShakeWindow(int count) {
+	int shakeCount = count;
 
-};
+	for (int i = 0; i < shakeCount; i++)
+	{
+		MyMoveWindow(WIDTH / 7 + pow(-1, i) * 2, HEIGHT / 7 + pow(-1, i) * 2);
+		Sleep(50);
+	}
 
-int main() {
+	for (int i = 0; i < shakeCount; i++)
+	{
+		MyMoveWindow(WIDTH / 7 + pow(-1, i), HEIGHT / 7 + pow(-1, i));
+		Sleep(50);
+	}
+}
+
+void ShowTitle() {
 	SetConsoleOutputCP(65001);
 
 	MyMoveWindow(WIDTH / 7, HEIGHT / 7);
@@ -89,26 +90,5 @@ int main() {
 		}
 
 		story.close();
-	}
-}
-
-void MyMoveWindow(int x, int y) {
-	HWND hwnd = GetConsoleWindow();
-	MoveWindow(hwnd, x, y, WIDTH / 2, HEIGHT / 2, TRUE);
-}
-
-void ShakeWindow(int count) {
-	int shakeCount = count;
-
-	for (int i = 0; i < shakeCount; i++)
-	{
-		MyMoveWindow(WIDTH / 7 + pow(-1, i) * 2, HEIGHT / 7 + pow(-1, i) * 2);
-		Sleep(50);
-	}
-
-	for (int i = 0; i < shakeCount; i++)
-	{
-		MyMoveWindow(WIDTH / 7 + pow(-1, i), HEIGHT / 7 + pow(-1, i));
-		Sleep(50);
 	}
 }
