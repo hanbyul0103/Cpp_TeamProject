@@ -438,7 +438,7 @@ void UseMagnatic(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) 
 
 	sort(move_vec.begin(), move_vec.end());
 	time_t start_time = clock();
-	//cout << move_vec.size();
+	
 	for (auto& move : move_vec) {
 		while (clock() - start_time < move.time)
 			Sleep(1);
@@ -451,8 +451,6 @@ void UseMagnatic(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer) 
 			Render(_arrmap, _pPlayer);
 		}
 	}
-
-	//Pick(_arrmap[_pPlayer->tPos.y][_pPlayer->tPos.x], _pPlayer);
 }
 
 bool MoveUpdate(vector<char> _arrmap[MAP_HEIGHT][MAP_WIDTH], PPLAYER _pPlayer)
