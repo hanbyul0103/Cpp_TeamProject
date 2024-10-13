@@ -958,9 +958,10 @@ void GameStart() {
 bool MainMenu() {
 	system("cls");
 
+	MyMoveWindow(WinposX, WinposY);
 	bool quit_game = false;
 	Gotoxy(0, 5);
-	SetFontSize(FW_BOLD, 23, 23);
+	SetFontSize(FW_BOLD, 20, 20);
 
 	int prevmode = _setmode(_fileno(stdout), _O_U16TEXT);
 	wcout << L"           ██████╗██████╗  █████╗ ███████╗██╗  ██╗    ██╗      █████╗ ███╗   ██╗██████╗ ██╗███╗   ██╗ ██████╗ \n";

@@ -9,12 +9,9 @@
 using std::cin;
 using std::cout;
 
-const int WIDTH = 1920;
-const int HEIGHT = 1080;
-
 void MyMoveWindow(int x, int y) {
 	HWND hwnd = GetConsoleWindow();
-	MoveWindow(hwnd, x, y, WIDTH / 2, HEIGHT / 2, TRUE);
+	MoveWindow(hwnd, x, y, SCREEN_WIDTH, SCREEN_HEIGHT, TRUE);
 }
 
 void ShakeWindow(int count) {
@@ -22,13 +19,13 @@ void ShakeWindow(int count) {
 
 	for (int i = 0; i < shakeCount; i++)
 	{
-		MyMoveWindow(WIDTH / 7 + pow(-1, i) * 2, HEIGHT / 7 + pow(-1, i) * 2);
+		MyMoveWindow(WinposX + pow(-1, i) * 2, WinposY + pow(-1, i) * 2);
 		Sleep(50);
 	}
 
 	for (int i = 0; i < shakeCount; i++)
 	{
-		MyMoveWindow(WIDTH / 7 + pow(-1, i), HEIGHT / 7 + pow(-1, i));
+		MyMoveWindow(WinposX + pow(-1, i), WinposY + pow(-1, i));
 		Sleep(50);
 	}
 }
@@ -38,7 +35,7 @@ void ShowTitle() {
 	UINT originalCP = GetConsoleOutputCP();
 	SetConsoleOutputCP(65001);
 
-	MyMoveWindow(WIDTH / 7, HEIGHT / 7);
+	MyMoveWindow(WinposX, WinposY);
 
 	std::ifstream story;
 	story.open("GPStory.txt");
