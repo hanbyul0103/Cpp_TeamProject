@@ -748,8 +748,8 @@ void Survive(int value) {
 	system("cls");
 	SetCursorVis(false, 1);
 
+	SetFontSize(FW_BOLD, 18, 18);
 	int prevmode = _setmode(_fileno(stdout), _O_U16TEXT);
-
 	SetColor((int)COLOR::LIGHT_GREEN, (int)COLOR::BLACK);
 	wcout << L"                                     .~.                    \n";
 	wcout << L"                                     :::-.                  \n";
@@ -817,7 +817,7 @@ void Fail() {
 	system("cls");
 	SetCursorVis(false, 1);
 
-	 
+	SetFontSize(FW_BOLD, 18, 18);
 	int prevmode = _setmode(_fileno(stdout), _O_U16TEXT);
 	SetColor((int)COLOR::LIGHT_RED, (int)COLOR::BLACK);
 	wcout << L"⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡠⣀⢧⢴⢥⢼⣀⡠⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n";
